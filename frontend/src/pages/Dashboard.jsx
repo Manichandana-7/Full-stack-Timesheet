@@ -6,6 +6,7 @@ import TimesheetApproval from './TimesheetApproval';
 
 const Dashboard = () => {
   const user = JSON.parse(localStorage.getItem('user'));
+  const employeeId = user?.id;
   const role = user?.role?.toUpperCase();
   const navigate = useNavigate();
 
@@ -39,7 +40,7 @@ const Dashboard = () => {
         {/* Show Timesheet Approval only for Project Manager */}
         {role === 'PROJECT_MANAGER' && (
           <div style={{ marginTop: '1rem' }}>
-            <button onClick={() => navigate('/timesheet-approval')}>
+            <button onClick={() => navigate(`/approval/${employeeId}`)}>
               Timesheet Approval
             </button>
           </div>
@@ -57,7 +58,7 @@ const Dashboard = () => {
         <SavedTimesheet />
 
         {/* Display TimesheetApproval Component only for Project Managers */}
-        {role === 'PROJECT_MANAGER' && <TimesheetApproval />}
+        {/* {role === 'PROJECT_MANAGER' && <TimesheetApproval />} */}
       </div>
     </div>
   );

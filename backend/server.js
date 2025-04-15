@@ -6,6 +6,7 @@ require('dotenv').config();
 const authRoutes = require('./routes/auth');
 const timesheetRoutes = require('./routes/timesheet');
 const savedsheets = require('./routes/savedsheets'); // if any
+const approvalRoutes = require('./routes/approval'); // Approval route
 
 app.use(cors());
 app.use(express.json()); // to parse JSON body
@@ -13,6 +14,7 @@ app.use(express.json()); // to parse JSON body
 app.use('/api/auth', authRoutes); // Login route
 app.use('/api/timesheet', timesheetRoutes); // Protected routes
 app.use('/api/savedsheets', savedsheets); // Saved timesheet route
+app.use('/api/approval', approvalRoutes); // Approval route
 
 
 const PORT = process.env.PORT || 5000;

@@ -28,7 +28,68 @@ router.get('/timesheets', async (req, res) => {
     }
   });
   
+  router.get('/timesheets/:timesheetId', async (req, res) => {
+    try {
+      const { data, error } = await supabase
+        .from('timesheets')
+        .select('*')
+        .eq('timesheet_id', req.params.timesheetId)
+        .single();
+  
+      if (error) throw error;
+      res.json({ timesheet: data });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
 
+  router.get('/entries', async (req, res) => {
+    try {
+      const { timesheet_id } = req.query;
+      const { data, error } = await supabase
+        .from('entries')
+        .select('*')
+        .eq('timesheet_id', timesheet_id);
+  
+      if (error) throw error;
+      res.json(data || []);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  router.patch('/timesheets/:timesheetId', async (req, res) => {
+    try {
+      const { status, total_hours } = req.body;
+      const { data, error } = await supabase
+        .from('timesheets')
+        .update({ status, total_hours })
+        .eq('timesheet_id', req.params.timesheetId)
+        .select();
+  
+      if (error) throw error;
+      res.json(data);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  router.put('/entries/:entryId', async (req, res) => {
+    try {
+      const { data, error } = await supabase
+        .from('entries')
+        .update(req.body)
+        .eq('entry_id', req.params.entryId)
+        .select();
+  
+      if (error) throw error;
+      res.json(data);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  
 // router.get('/timesheets', async (req, res) => {
 //     try {
 //       // Query the database to fetch the timesheets

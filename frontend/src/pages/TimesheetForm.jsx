@@ -142,8 +142,8 @@ const TimesheetForm = () => {
   const handleRemoveRow = async (projectId, rowIndex) => {
     const project = timesheet.projects.find(p => p.project_id === projectId);
     const row = project?.rows?.[rowIndex];
-    const weekStartDate = weekDates[0].toISOString().split("T")[0]; // ✅ Get YYYY-MM-DD
-    // const timesheetId = timesheet?.timesheet_id; // ✅ Use timesheet_id instead of employee_id
+    const weekStartDate = weekDates[0].toISOString().split("T")[0]; 
+    // const timesheetId = timesheet?.timesheet_id;
     const user = JSON.parse(localStorage.getItem("user"));
     const employeeId = user?.id;
     // If the row has been saved (has task_id), delete from backend
@@ -158,9 +158,9 @@ const TimesheetForm = () => {
             task_id: row.task_id
           }
         });
-        console.log("✅ Entry deleted from backend.");
+        console.log(" Entry deleted from backend.");
       } catch (error) {
-        console.error("❌ Failed to delete entry from backend:", error);
+        console.error(" Failed to delete entry from backend:", error);
       }
     }
   
@@ -187,7 +187,7 @@ const TimesheetForm = () => {
     }, 0);
   };
 
-  const handleSaveSubmit = (e, type) => {
+  const handleSaveSubmit = async (e, type) => {
     e.preventDefault();
 
     if (isFutureDate) {
@@ -206,6 +206,7 @@ const TimesheetForm = () => {
       p.rows
         .filter(row => row.task_id)
         .map(row => ({
+          employee_id: parseInt(employeeId),
           project_id: p.project_id,
           task_id: parseInt(row.task_id),
           mon_hours: parseFloat(row.hours.Mon) || 0,
@@ -227,16 +228,33 @@ const TimesheetForm = () => {
       entries
     };
 
-    console.log("📤 Payload:", payload);
+    console.log(" Payload:", payload);
 
     api.post(`/timesheet/timesheets`, payload)
       .then(() => {
-        alert(`✅ Timesheet ${status.toLowerCase()} successfully!`);
+        alert(` Timesheet ${status.toLowerCase()} successfully!`);
       })
       .catch(error => {
-        console.error("❌ Error saving/submitting timesheet:", error);
+        console.error(" Error saving/submitting timesheet:", error);
         alert("An error occurred while saving/submitting the timesheet.");
       });
+      
+  // try {
+  //   if (type === "submit") {
+  //     // Submit the timesheet
+  //     const response = await api.post(`/timesheet/submit`, payload);
+  //     if (response.status === 201) {
+  //       alert(`Timesheet submitted successfully!`);
+  //     }
+  //   } else {
+  //     // Save the timesheet
+  //     await api.post(`/timesheet/timesheets`, payload);
+  //     alert(`Timesheet saved successfully!`);
+  //   }
+  // } catch (error) {
+  //   console.error("Error saving/submitting timesheet:", error);
+  //   alert("An error occurred while saving/submitting the timesheet.");
+  // }
   };
 
   const formatDate = (date) => {
@@ -358,6 +376,7 @@ const TimesheetForm = () => {
           </button>
           <button
             type="submit"
+            onClick={(e) => handleSaveSubmit(e, "submit")}
             className={`bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600 ${isFutureDate ? 'opacity-50 cursor-not-allowed' : ''}`}
             disabled={isFutureDate}
           >
