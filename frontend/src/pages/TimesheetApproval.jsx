@@ -45,6 +45,10 @@ const TimesheetApproval = ({ managerId }) => {
     setOpenModal(true); // Open the modal
   };
 
+  const handleReject = (timesheet) => {
+    
+  }
+
   const handleSubmitReview = async () => {
     if (foodRating < 3 && !feedback) {
       alert('Please provide feedback for ratings below 3.');
@@ -110,6 +114,7 @@ const TimesheetApproval = ({ managerId }) => {
                 >
                   Approve
                 </button>
+                <button onClick={() => handleReject(ts)}>Reject</button>
                 <button onClick={() => {/* Logic to view project details */}}>View</button>
               </td>
             </tr>
