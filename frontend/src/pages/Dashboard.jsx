@@ -11,57 +11,76 @@ const Dashboard = () => {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    // Clear localStorage and redirect to login page
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    navigate('/'); // Navigate to login page
+    navigate('/');
   };
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', fontFamily: 'Segoe UI, sans-serif', backgroundColor: '#f9fafb' }}>
       {/* Sidebar */}
-      <div
+      <aside
         style={{
           width: '250px',
-          backgroundColor: '#f4f4f4',
-          padding: '20px',
-          borderRight: '1px solid #ddd',
+          backgroundColor: '#ffffff',
+          padding: '30px 20px',
+          borderRight: '1px solid #e0e0e0',
+          boxShadow: '2px 0 5px rgba(0, 0, 0, 0.05)',
         }}
       >
-        <h2>Dashboard</h2>
-        <h4>Welcome, {user?.name}</h4>
-        <h5>Role: {role}</h5>
-
-        <div style={{ marginTop: '2rem' }}>
-          {/* Always show Timesheet */}
-          <button onClick={() => navigate('/timesheet')}>Timesheet</button>
+        <h2 style={{ fontSize: '24px', marginBottom: '10px', color: '#4caf50' }}>Dashboard</h2>
+        <div style={{ marginBottom: '30px' }}>
+          <p style={{ margin: '5px 0', fontWeight: 'bold' }}>Welcome,</p>
+          <p style={{ margin: '0 0 5px 0', color: '#333' }}>{user?.name}</p>
+          <p style={{ fontSize: '14px', color: '#666' }}>Role: <strong>{role}</strong></p>
         </div>
 
-        {/* Show Timesheet Approval only for Project Manager */}
-        {role === 'PROJECT_MANAGER' && (
-          <div style={{ marginTop: '1rem' }}>
-            <button onClick={() => navigate(`/approval/${employeeId}`)}>
+        <nav style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+          <button
+            onClick={() => navigate('/timesheet')}
+            style={buttonStyle}
+          >
+            Timesheet
+          </button>
+
+          {role === 'PROJECT_MANAGER' && (
+            <button
+              onClick={() => navigate(`/approval/${employeeId}`)}
+              style={buttonStyle}
+            >
               Timesheet Approval
             </button>
-          </div>
-        )}
+          )}
 
-        {/* Logout Button */}
-        <div style={{ marginTop: '2rem' }}>
-          <button onClick={handleLogout}>Logout</button>
-        </div>
-      </div>
+          <button
+            onClick={handleLogout}
+            style={{ ...buttonStyle, backgroundColor: '#e53935' }}
+          >
+            Logout
+          </button>
+        </nav>
+      </aside>
 
-      {/* Main Content Area */}
-      <div style={{ flex: 1, padding: '2rem' }}>
-        {/* Display Timesheet Component */}
+      {/* Main Content */}
+      <main style={{ flex: 1, padding: '40px' }}>
         <SavedTimesheet />
 
-        {/* Display TimesheetApproval Component only for Project Managers */}
+        {/* Uncomment if you want to render TimesheetApproval directly */}
         {/* {role === 'PROJECT_MANAGER' && <TimesheetApproval />} */}
-      </div>
+      </main>
     </div>
   );
+};
+
+const buttonStyle = {
+  padding: '10px 20px',
+  fontSize: '16px',
+  color: '#fff',
+  backgroundColor: '#4caf50',
+  border: 'none',
+  borderRadius: '5px',
+  cursor: 'pointer',
+  transition: 'background-color 0.2s ease-in-out',
 };
 
 export default Dashboard;

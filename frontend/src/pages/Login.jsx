@@ -11,7 +11,6 @@ const Login = ({ setAuth }) => {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      // Use the custom Axios instance to make the login request
       const res = await api.post('/auth/login', {
         email,
         password,
@@ -19,45 +18,45 @@ const Login = ({ setAuth }) => {
 
       const { token, employee } = res.data;
 
-      // Store the token and user info in localStorage
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(employee));
-
-      // Trigger re-render in App by updating state
       setAuth({ token, user: employee });
-      
-      // Navigate to the dashboard based on role
       navigate('/dashboard');
-
     } catch (err) {
       setMsg(err.response?.data?.message || 'Login failed');
     }
   };
 
   return (
-    <div style={{ padding: '2rem' }}>
-      <h2>Login</h2>
-      <form
-        onSubmit={handleLogin}
-        style={{ display: 'flex', flexDirection: 'column', width: '200px' }}
-      >
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-        <button type="submit">Login</button>
-      </form>
-      {msg && <p style={{ color: 'red' }}>{msg}</p>}
+    <div className="flex items-center justify-center min-h-screen bg-gray-100">
+      <div className="bg-white shadow-md rounded-lg p-8 w-full max-w-sm">
+        <h2 className="text-2xl font-bold text-center mb-6">Login to your account</h2>
+        <form onSubmit={handleLogin} className="flex flex-col space-y-4">
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            className="px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            className="px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <button
+            type="submit"
+            className="bg-violet-700 text-white font-bold py-2 rounded border hover:bg-violet-800 transition duration-200"
+          >
+            Login
+          </button>
+        </form>
+        {msg && <p className="text-red-600 mt-4 text-center">{msg}</p>}
+      </div>
     </div>
   );
 };
