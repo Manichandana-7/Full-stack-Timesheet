@@ -16,6 +16,7 @@ const App = () => {
 
   return (
     <Routes>
+      {/* <Route path="/" element={!auth.token ? <Login setAuth={setAuth} /> : <Navigate to="/dashboard" />} /> */}
       <Route path="/" element={!auth.token ? <Login setAuth={setAuth} /> : <Navigate to="/dashboard" />} />
       <Route path="/dashboard" element={auth.token ? <Dashboard role={role} /> : <Navigate to="/" />}/>
       <Route path="/timesheet" element={auth.token ? <TimesheetForm /> : <Navigate to="/" />} />

@@ -2,10 +2,181 @@ const express = require('express');
 const router = express.Router();
 const { supabase } = require('../config/db'); 
 router.get('/:managerId', async (req, res) => {
-    const { managerId } = req.params;
-  
-    try {
+  const { managerId } = req.params;
+
+  try {
       const { data, error } = await supabase
+          .from('project_manager')
+          .select(`
+              timesheets (
+                  timesheet_id,
+                  employee_id,
+                  week_start_date,
+                  week_end_date,
+                  status,
+                  total_hours,
+                  employees (
+                      name
+                  ),
+                  project_manager (project_id, manager_id)
+              )
+          `)
+          .eq('manager_id', managerId);
+
+      if (error) {
+          return res.status(400).json({ error: error.message });
+      }
+
+      // Create a map to track unique timesheets by employee and week_start_date
+      const uniqueTimesheets = new Map();
+
+      // Iterate over the data to filter unique timesheets
+      data.forEach(entry => {
+          const timesheet = entry.timesheets; // Access the timesheets object
+          const employeeId = timesheet.employee_id;
+          const weekStartDate = timesheet.week_start_date;
+
+          // Create a unique key for each employee and week_start_date
+          const key = `${employeeId}-${weekStartDate}`;
+
+          // Check if the key already exists in the map
+          if (!uniqueTimesheets.has(key)) {
+              uniqueTimesheets.set(key, timesheet);
+          }
+      });
+
+      // Convert the map back to an array
+      const filteredData = Array.from(uniqueTimesheets.values());
+
+      return res.status(200).json(filteredData);
+  } catch (err) {
+      console.error("Error fetching timesheets:", err);
+      return res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+  // router.get('/:managerId', async (req, res) => {
+  //   const { managerId } = req.params;
+   
+  //   try {
+  //     // Step 1: Get all project IDs for the manager
+  //     const { data: projects, error: projectError } = await supabase
+  //       .from('project_manager')
+  //       .select('project_id')
+  //       .eq('manager_id', managerId);
+   
+  //     if (projectError) {
+  //       return res.status(400).json({ error: projectError.message });
+  //     }
+   
+  //     const projectIds = projects.map(p => p.project_id);
+   
+  //     // Step 2: Fetch timesheets for those projects
+  //     const { data: timesheets, error: timesheetError } = await supabase
+  //     .from('project_manager')
+  //     .select(`
+  //       timesheets (
+  //         timesheet_id,
+  //         employee_id,
+  //         week_start_date,
+  //         week_end_date,
+  //         status,
+  //         total_hours,
+  //         employees (
+  //           name
+  //         ),
+  //         project_manager (project_id,manager_id)
+  //       )
+  //     `)
+  //     .eq('manager_id', managerId);
+   
+  //     if (timesheetError) {
+  //       return res.status(400).json({ error: timesheetError.message });
+  //     }
+   
+  //     // Step 3: Filter to unique employee-week pairs
+  //     const uniqueMap = new Map();
+   
+  //     timesheets.forEach(ts => {
+  //       const key = `${ts.employee_id}-${ts.week_start_date}`;
+  //       if (!uniqueMap.has(key)) {
+  //         uniqueMap.set(key, ts);
+  //       }
+  //     });
+   
+  //     const uniqueTimesheets = Array.from(uniqueMap.values());
+   
+  //     return res.status(200).json(uniqueTimesheets);
+  //   } catch (err) {
+  //     console.error("Error fetching timesheets:", err);
+  //     return res.status(500).json({ error: 'Internal Server Error' });
+  //   }
+  // });
+   
+
+  // router.get('/:managerId', async (req, res) => {
+  //   const { managerId } = req.params;
+  
+  //   try {
+  //     // First get all projects managed by this manager
+  //     const { data: projects, error: projectsError } = await supabase
+  //       .from('project_manager')
+  //       .select('project_id')
+  //       .eq('manager_id', managerId);
+  
+  //     if (projectsError) {
+  //       return res.status(400).json({ error: projectsError.message });
+  //     }
+  
+  //     const projectIds = projects.map(p => p.project_id);
+  
+  //     // Then get timesheets for these projects
+  //     const { data: timesheets, error: timesheetsError } = await supabase
+  //       .from('timesheets')
+  //       .select(`
+  //         timesheet_id,
+  //         employee_id,
+  //         week_start_date,
+  //         week_end_date,
+  //         status,
+  //         total_hours,
+  //         employees(name),
+  //         projects:project_manager!inner(project_id, manager_id)
+  //       `)
+  //       .in('projects.project_id', projectIds)
+  //       .eq('projects.manager_id', managerId);
+  
+  //     if (timesheetsError) {
+  //       return res.status(400).json({ error: timesheetsError.message });
+  //     }
+  
+  //     // Remove duplicates by using a Set
+  //     const uniqueTimesheets = [];
+  //     const seenTimesheets = new Set();
+  
+  //     timesheets.forEach(ts => {
+  //       if (!seenTimesheets.has(ts.timesheet_id)) {
+  //         seenTimesheets.add(ts.timesheet_id);
+  //         uniqueTimesheets.push({
+  //           ...ts,
+  //           employee_name: ts.employees?.name,
+  //           employees: undefined // Remove nested object
+  //         });
+  //       }
+  //     });
+  
+  //     return res.status(200).json(uniqueTimesheets);
+  //   } catch (err) {
+  //     console.error("Error fetching timesheets:", err);
+  //     return res.status(500).json({ error: 'Internal Server Error' });
+  //   }
+  // });
+  router.get('/:managerId', async (req, res) => {
+    const { managerId } = req.params;
+    
+    try {
+      // Step 1: Get all timesheets for projects managed by this manager
+      const { data: timesheets, error: timesheetError } = await supabase
         .from('project_manager')
         .select(`
           timesheets (
@@ -17,22 +188,33 @@ router.get('/:managerId', async (req, res) => {
             total_hours,
             employees (
               name
-            ),
-            project_manager (project_id,manager_id)
+            )
           )
         `)
         .eq('manager_id', managerId);
   
-      if (error) {
-        return res.status(400).json({ error: error.message });
+      if (timesheetError) {
+        return res.status(400).json({ error: timesheetError.message });
       }
   
-      return res.status(200).json(data);
+      // Step 2: Flatten the nested structure
+      const allTimesheets = timesheets.flatMap(pm => 
+        pm.timesheets.map(ts => ({
+          ...ts,
+          project_id: pm.project_id, // Include project_id if needed
+          employee_name: ts.employees?.name
+        }))
+      );
+  
+      // Remove the nested employees object if you want cleaner output
+      const cleanedTimesheets = allTimesheets.map(({ employees, ...rest }) => rest);
+  
+      return res.status(200).json(cleanedTimesheets);
     } catch (err) {
       console.error("Error fetching timesheets:", err);
       return res.status(500).json({ error: 'Internal Server Error' });
     }
-  }); 
+  });
 
   router.post('/performance-reviews', async (req, res) => {
     const { timesheet_id, project_manager_id, rating, feedback, status } = req.body;

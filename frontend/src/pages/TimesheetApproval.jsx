@@ -2,9 +2,10 @@ import React, { useEffect, useState } from "react";
 import api from "../api/axios";
 import { Box, Modal, Button, Typography, Paper } from "@mui/material";
 import Rating from "@mui/material/Rating";
+import Sidebar from './Sidebar';
 import { CiStar } from "react-icons/ci";
 import { v4 as uuidv4 } from "uuid";
-
+import { AiOutlineClose } from 'react-icons/ai';
 const labels = {
   1: "Terrible",
   2: "Bad",
@@ -32,7 +33,13 @@ const TimesheetApproval = ({ managerId }) => {
     const fetchData = async () => {
       try {
         const timesheetResponse = await api.get(`/approval/${managerId}`);
-        setTimesheets(timesheetResponse.data);
+
+        // Ensure the response is an array of timesheets
+        if (Array.isArray(timesheetResponse.data)) {
+          setTimesheets(timesheetResponse.data);
+        } else {
+          setError("Unexpected data format");
+        }
 
         const allReviews = await api.get(`/approval/performance-reviews/all/${managerId}`);
         const reviewMap = {};
@@ -58,7 +65,7 @@ const TimesheetApproval = ({ managerId }) => {
   };
 
   const handleReject = async (timesheet) => {
-    const reviewKey = `${timesheet.timesheets.timesheet_id}_${managerId}`;
+    const reviewKey = `${timesheet.timesheet_id}_${managerId}`; // Adjusted to access timesheet_id directly
     if (existingReviews[reviewKey]) {
       alert("Review already submitted for this timesheet.");
       return;
@@ -66,7 +73,7 @@ const TimesheetApproval = ({ managerId }) => {
 
     try {
       const response = await api.post("/approval/performance-reviews", {
-        timesheet_id: timesheet.timesheets.timesheet_id,
+        timesheet_id: timesheet.timesheet_id, // Adjusted to access timesheet_id directly
         project_manager_id: managerId,
         rating: null,
         feedback: "Rejected",
@@ -80,7 +87,7 @@ const TimesheetApproval = ({ managerId }) => {
           [reviewKey]: true,
         }));
         setSubmittedReviews((prev) =>
-          new Set(prev).add(timesheet.timesheets.timesheet_id)
+          new Set(prev).add(timesheet.timesheet_id) // Adjusted to access timesheet_id directly
         );
       }
     } catch (err) {
@@ -90,11 +97,11 @@ const TimesheetApproval = ({ managerId }) => {
 
   const handleSubmitReview = async () => {
     if (foodRating < 3 && !feedback) {
-      alert("Please provide feedback for ratings below 3.");
+      alert(" Please provide feedback for ratings below 3.");
       return;
     }
 
-    const reviewKey = `${selectedTimesheet.timesheets.timesheet_id}_${managerId}`;
+    const reviewKey = `${selectedTimesheet.timesheet_id}_${managerId}`; // Adjusted to access timesheet_id directly
     if (existingReviews[reviewKey]) {
       alert("This timesheet has already been reviewed.");
       return;
@@ -102,7 +109,7 @@ const TimesheetApproval = ({ managerId }) => {
 
     try {
       const response = await api.post("/approval/performance-reviews", {
-        timesheet_id: selectedTimesheet.timesheets.timesheet_id,
+        timesheet_id: selectedTimesheet.timesheet_id, // Adjusted to access timesheet_id directly
         project_manager_id: managerId,
         rating: foodRating,
         feedback: foodRating < 3 ? feedback : null,
@@ -116,9 +123,10 @@ const TimesheetApproval = ({ managerId }) => {
           [reviewKey]: true,
         }));
         setSubmittedReviews((prev) =>
-          new Set(prev).add(selectedTimesheet.timesheets.timesheet_id)
+          new Set(prev).add(selectedTimesheet.timesheet_id) // Adjusted to access timesheet_id directly
         );
         setOpenModal(false);
+        handleCloseModal();
       }
     } catch (err) {
       console.error("Error submitting performance review:", err);
@@ -144,39 +152,50 @@ const TimesheetApproval = ({ managerId }) => {
     setProjectDetails(null);
   };
 
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div>Error: {error}</div>;
+  // if (loading) return <div>Loading...</div>;
+  // if (error) return <div>Error: {error}</div>;
 
   return (
-    <div style={{ padding: "20px", fontFamily: "Arial, sans-serif" }}>
-      <Typography variant="h4" gutterBottom align="center" style={{ fontWeight: "bold", color: "#4CAF50" }}>
-        Timesheet Approval
-      </Typography>
+    <div
+      style={{
+        display: 'flex',
+        minHeight: '100vh',
+        fontFamily: 'Segoe UI, sans-serif',
+        backgroundColor: '#f9fafb',
+      }}
+    >
+      <Sidebar />
 
-      <Paper sx={{ padding: 2 }}>
+      <main style={{ flex: 1, padding: '40px' }}>
+
+    <div style={{ padding: "40px", fontFamily: "Arial, sans-serif" }}>
+      <h2 className="text-3xl font-semibold mb-6 text-center">Timesheets for approval</h2>
+
+      <Paper >
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
-          <thead>
-            <tr style={{ backgroundColor: "#f4f4f4" }}>
-              <th style={{ padding: "10px", borderBottom: "1px solid #ddd" }}>Employee Name</th>
-              <th style={{ padding: "10px", borderBottom: "1px solid #ddd" }}>Week Start</th>
-              <th style={{ padding: "10px", borderBottom: "1px solid #ddd" }}>Week End</th>
-              <th style={{ padding: "10px", borderBottom: "1px solid #ddd" }}>Status</th>
-              <th style={{ padding: "10px", borderBottom: "1px solid #ddd" }}>Total Hours</th>
-              <th style={{ padding: "10px", borderBottom: "1px solid #ddd" }}>Actions</th>
+          <thead  className="bg-[#1b0c5a] text-white p-2">
+            <tr>
+              <th className="px-6 py-4 text-left text-md font-semibold">Employee Name</th>
+              <th className="px-6 py-4 text-left text-md font-semibold">Week Start</th>
+              <th className="px-6 py-4 text-left text-md font-semibold">Week End</th>
+              <th className="px-6 py-4 text-left text-md font-semibold">Status</th>
+              <th className="px-6 py-4 text-left text-md font-semibold">Total Hours</th>
+              <th className="px-6 py-4 text-left text-md font-semibold">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {timesheets.map((ts) => {
-              const reviewKey = `${ts.timesheets.timesheet_id}_${managerId}`;
+            {timesheets.map((ts,index) => {
+              const reviewKey = `${ts.timesheet_id}_${managerId}`;
               const isReviewed = !!existingReviews[reviewKey];
               return (
-                <tr key={uuidv4()} style={{ borderBottom: "1px solid #ddd" }}>
-                  <td style={{ padding: "10px" }}>{ts.timesheets.employees.name}</td>
-                  <td style={{ padding: "10px" }}>{ts.timesheets.week_start_date}</td>
-                  <td style={{ padding: "10px" }}>{ts.timesheets.week_end_date}</td>
-                  <td style={{ padding: "10px" }}>{ts.timesheets.status}</td>
-                  <td style={{ padding: "10px" }}>{ts.timesheets.total_hours}</td>
-                  <td style={{ padding: "10px" }}>
+                <tr key={uuidv4()}  className={`${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+                } hover:bg-gray-100 transition duration-200 cursor-pointer` } >
+                  <td className="px-6 py-4 text-sm text-gray-800">{ts.employees.name}</td>
+                  <td className="px-6 py-4 text-sm text-gray-800">{ts.week_start_date}</td>
+                  <td className="px-6 py-4 text-sm text-gray-800">{ts.week_end_date}</td>
+                  <td className="px-6 py-4 text-sm text-gray-800">{ts.status}</td>
+                  <td className="px-6 py-4 text-sm text-gray-800">{ts.total_hours}</td>
+                  <td className="px-6 py-4 text-sm text-gray-800">
                     <Button
                       variant="contained"
                       color="primary"
@@ -198,7 +217,7 @@ const TimesheetApproval = ({ managerId }) => {
                     <Button
                       variant="outlined"
                       color="primary"
-                      onClick={() => handleViewProject(ts.timesheets.timesheet_id)}
+                      onClick={() => handleViewProject(ts.timesheet_id)} // Adjusted to access timesheet_id directly
                     >
                       View
                     </Button>
@@ -223,7 +242,7 @@ const TimesheetApproval = ({ managerId }) => {
           }}
         >
           <Typography variant="h6" align="center" sx={{ marginBottom: 2 }}>
-            Rate Timesheet ID: {selectedTimesheet?.timesheets.timesheet_id}
+            Rate Timesheet ID: {selectedTimesheet?.timesheet_id}
           </Typography>
           <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 2 }}>
             <Rating
@@ -259,38 +278,80 @@ const TimesheetApproval = ({ managerId }) => {
 
       {/* Project Details Modal */}
       <Modal open={openProjectModal} onClose={handleCloseProjectModal}>
-        <Box
-          sx={{
-            padding: 4,
-            backgroundColor: "white",
-            borderRadius: 2,
-            maxWidth: 600,
-            margin: "auto",
-            marginTop: "5%",
-          }}
-        >
-          <Typography variant="h6" gutterBottom>
-            Project Details
-          </Typography>
-          {projectDetails && projectDetails.length > 0 ? (
-            projectDetails.map((entry) => (
-              <div key={entry.entry_id} style={{ marginBottom: "20px" }}>
-                <Typography variant="body1"><strong>Project Name:</strong> {entry.projects.project_name}</Typography>
-                <Typography variant="body1"><strong>Task Name:</strong> {entry.tasks.task_name}</Typography>
-                <Typography variant="body1"><strong>Comments:</strong> {entry.comments}</Typography>
-                <Typography variant="body1"><strong>Total Hours:</strong>{" "}
-                  {(entry.mon_hours || 0) + (entry.tue_hours || 0) + (entry.wed_hours || 0) + (entry.thu_hours || 0) + (entry.fri_hours || 0) + (entry.sat_hours || 0) + (entry.sun_hours || 0)}
-                </Typography>
-              </div>
-            ))
-          ) : (
-            <Typography variant="body1">No project details available.</Typography>
-          )}
-          <Button variant="contained" onClick={handleCloseProjectModal} sx={{ marginTop: 2 }}>
-            Close
-          </Button>
+  <Box
+    sx={{
+      position: 'absolute',
+      top: '50%',
+      left: '50%',
+      transform: 'translate(-50%, -50%)',
+      width: '80%',
+      maxWidth: 800,
+      maxHeight: '80vh',
+      overflow: 'auto',
+      bgcolor: 'background.paper',
+      boxShadow: 24,
+      p: 3,
+      borderRadius: 2,
+    }}
+  >
+    {/* Close Icon */}
+    <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+      <AiOutlineClose
+        size={24}
+        style={{ cursor: 'pointer' }}
+        onClick={handleCloseProjectModal}
+      />
+    </Box>
+ 
+    <Typography
+      variant="h6"
+      gutterBottom
+      sx={{ fontWeight: 'bold', mb: 2 }}
+      className="text-center"
+    >
+      Project Details
+    </Typography>
+ 
+    {projectDetails && projectDetails.length > 0 ? (
+      <Paper sx={{ width: '100%', overflow: 'hidden', mb: 2 }}>
+        <Box sx={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead className="bg-[#1b0c5a] text-white p-2">
+              <tr >
+                <th className="px-6 py-4 text-left text-sm font-semibold">Project Name</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold">Task Name</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold">Comments</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold">Total Hours</th>
+              </tr>
+            </thead>
+            <tbody>
+              {projectDetails.map((entry,index) => (
+                <tr key={entry.entry_id}
+                className={`${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+                  } hover:bg-gray-100 transition duration-200 cursor-pointer` }>
+                  <td className="px-6 py-4 text-sm text-gray-800">{entry.projects?.project_name || 'N/A'}</td>
+                  <td className="px-6 py-4 text-sm text-gray-800">{entry.tasks?.task_name || 'N/A'}</td>
+                  <td className="px-6 py-4 text-sm text-gray-800">{entry.comments || '-'}</td>
+                  <td className="px-6 py-4 text-sm text-gray-800">
+                    {(entry.mon_hours || 0) + (entry.tue_hours || 0) + (entry.wed_hours || 0) +
+                     (entry.thu_hours || 0) + (entry.fri_hours || 0) + (entry.sat_hours || 0) +
+                     (entry.sun_hours || 0)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </Box>
-      </Modal>
+      </Paper>
+    ) : (
+      <Typography variant="body1" sx={{ mb: 2 }}>
+        No project details available.
+      </Typography>
+    )}
+  </Box>
+</Modal>
+    </div>
+          </main>
     </div>
   );
 };

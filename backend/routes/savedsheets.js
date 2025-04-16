@@ -26,19 +26,20 @@ router.get('/reviews', async (req, res) => {
     if (reviewsError) throw new Error(reviewsError.message);
 
     // Step 3: Fetch the project manager's name using project_manager_id from the reviews table
+    const projectManagerIds = reviews.map(review => review.project_manager_id);
     const { data: projectManagers, error: projectManagersError } = await supabase
       .from('employees')
-      .select('name')
-      .in('employee_id', reviews.map(review => review.project_manager_id));  // Get project manager names based on project_manager_id
+      .select('employee_id, name')  // Ensure to select employee_id for matching
+      .in('employee_id', projectManagerIds);  // Get project manager names based on project_manager_id
 
     if (projectManagersError) throw new Error(projectManagersError.message);
 
     // Step 4: Attach the project manager's name to each review
     const reviewsWithProjectManager = reviews.map(review => {
-      const projectManager = projectManagers.find(manager => manager.id === review.project_manager_id);
+      const projectManager = projectManagers.find(manager => manager.employee_id === review.project_manager_id); // Use employee_id for matching
       return {
         ...review,
-        project_manager_name: projectManager ? projectManager.name : 'N/A',
+        project_manager_name: projectManager ? projectManager.name : 'N/A', // Default to 'N/A' if not found
       };
     });
 
