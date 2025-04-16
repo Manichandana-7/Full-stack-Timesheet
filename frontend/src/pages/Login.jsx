@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 
-const Login = ({ setAuth }) => {
+const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [msg, setMsg] = useState('');
@@ -11,11 +11,8 @@ const Login = ({ setAuth }) => {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const res = await api.post('/auth/login', { email, password });
-      const { token, employee } = res.data;
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(employee));
-      setAuth({ token, user: employee });
+       const res=await api.post('/auth/login', { email, password },{'Content-Type': 'application/json',},{ withCredentials: true });
+       console.log(res.data);
       navigate('/dashboard');
     } catch (err) {
       setMsg(err.response?.data?.message || 'Login failed');
@@ -62,7 +59,7 @@ const Login = ({ setAuth }) => {
             </div>
             <button
               type="submit"
-              className="bg-violet-900 text-white font-semibold py-2 rounded-lg hover:bg-violet-800 transition duration-200 mt-2"
+              className="bg-violet-900 text-white font-semibold py-2 rounded-lg cursor-pointer hover:bg-violet-800 transition duration-200 mt-2"
             >
               Login
             </button>

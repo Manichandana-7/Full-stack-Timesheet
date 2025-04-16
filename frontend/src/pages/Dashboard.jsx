@@ -15,7 +15,7 @@ const Dashboard = () => {
     >
       <Sidebar />
 
-      <main style={{ flex: 1, padding: '40px' }}>
+      <main style={{ flex: 1, padding: '40px' }} className="ml-64">
         <SavedTimesheet />
       </main>
     </div>

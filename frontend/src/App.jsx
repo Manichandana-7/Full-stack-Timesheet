@@ -7,21 +7,16 @@ import TimesheetApproval from './pages/TimesheetApproval';
 import Dashboard from './pages/Dashboard';
 
 const App = () => {
-  const [auth, setAuth] = useState({
-    token: localStorage.getItem('token'),
-    user: JSON.parse(localStorage.getItem('user')),
-  });
 
-  const role = auth.user?.role?.toUpperCase();
 
   return (
     <Routes>
       {/* <Route path="/" element={!auth.token ? <Login setAuth={setAuth} /> : <Navigate to="/dashboard" />} /> */}
-      <Route path="/" element={!auth.token ? <Login setAuth={setAuth} /> : <Navigate to="/dashboard" />} />
-      <Route path="/dashboard" element={auth.token ? <Dashboard role={role} /> : <Navigate to="/" />}/>
-      <Route path="/timesheet" element={auth.token ? <TimesheetForm /> : <Navigate to="/" />} />
-      <Route path="/timesheetcard/:timesheetId" element={auth.token ? <TimesheetCard /> : <Navigate to="/" />} />
-      <Route path="/approval/:managerId" element={auth.token ? <TimesheetApproval managerId={auth.user.id} /> : <Navigate to="/" />} />
+      <Route path="/" element={ <Login  /> } />
+      <Route path="/dashboard" element={<Dashboard  /> }/>
+      <Route path="/timesheet" element={<TimesheetForm /> } />
+      {/* <Route path="/timesheetcard/:timesheetId" element={<TimesheetCard /> : <Navigate to="/" />} /> */}
+      <Route path="/approval/:managerId" element={<TimesheetApproval /> } />
     </Routes>
   );
 };

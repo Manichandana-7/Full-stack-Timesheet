@@ -3,7 +3,26 @@ import { useNavigate } from "react-router-dom";
 import api from "../api/axios";
 import { Rating } from "@mui/material";
 import TimesheetCard from "./TimesheetCard";
+import { jwtDecode } from 'jwt-decode';
 
+const getUserFromCookie = () => {
+  console.log('cookie',document.cookie);
+  const cookie = document.cookie
+    .split('; ')
+    .find(row => row.startsWith('token='));
+
+  if (!cookie) return null;
+
+  const token = cookie.split('=')[1];
+
+  try {
+    const decoded = jwtDecode(token); // { id, name, email, role }
+    return decoded;
+  } catch (error) {
+    console.error('Invalid token:', error);
+    return null;
+  }
+};
 const SavedTimesheet = () => {
   const [timesheets, setTimesheets] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -14,11 +33,11 @@ const SavedTimesheet = () => {
   useEffect(() => {
     const fetchTimesheets = async () => {
       try {
-        const user = JSON.parse(localStorage.getItem("user"));
+        const user = getUserFromCookie();
         const employeeId = user?.id;
 
         if (!employeeId) {
-          setError("Employee ID not found in session storage");
+          setError("Employee ID not found in cookie storage");
           setLoading(false);
           return;
         }

@@ -12,6 +12,7 @@
 const express = require('express');
 const router = express.Router();
 const { supabase } = require('../config/db'); 
+const authenticateToken = require('../middleware/authMiddleware');
 
 router.get('/projects/:employee_id', async (req, res) => {
   const { employee_id } = req.params;

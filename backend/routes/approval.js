@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { supabase } = require('../config/db'); 
+const authenticateToken = require('../middleware/authMiddleware');
 router.get('/:managerId', async (req, res) => {
   const { managerId } = req.params;
 
