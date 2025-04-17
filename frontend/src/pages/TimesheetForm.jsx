@@ -325,6 +325,7 @@ const TimesheetForm = () => {
   };
 
   const calculateRowSum = (row) => {
+    console.log(row)
     const hours = row?.hours || {};
     return Object.values(hours).reduce((sum, hour) => {
       const parsed = parseFloat(hour);
@@ -346,7 +347,6 @@ const TimesheetForm = () => {
     }
 
     const status = type === "submit" ? "Submitted" : "Saved";
-
     const entries = timesheet.projects.flatMap((p) =>
       p.rows
         .filter((row) => row.task_id)
@@ -364,6 +364,7 @@ const TimesheetForm = () => {
           comments: row.comments || "",
         }))
     );
+    console.log(entries)
 
     const payload = {
       employee_id: parseInt(employeeId),
@@ -373,22 +374,23 @@ const TimesheetForm = () => {
       entries,
     };
 
-    api
+    await api
       .post(`/timesheet/timesheets`, payload)
       .then(() => {
         console.log(`Timesheet ${status.toLowerCase()} successfully!`);
+        if (status === "Submitted") {
+          navigate("/dashboard");
+          // window.location.reload();
+        }
+        if (status === "Saved") {
+          navigate("/timesheet");
+          // window.location.reload();
+        }
       })
       .catch((error) => {
         console.error("Error saving/submitting timesheet:", error);
       });
-    if (status === "Submitted") {
-      navigate("/dashboard");
-      window.location.reload();
-    }
-    if (status === "Saved") {
-      navigate("/timesheet");
-      window.location.reload();
-    }
+
   };
 
   const formatDate = (date) => {
@@ -402,12 +404,8 @@ const TimesheetForm = () => {
 
   return (
     <div
-      style={{
-        display: "flex",
-        minHeight: "100vh",
-        fontFamily: "Segoe UI, sans-serif",
-        backgroundColor: "#f9fafb",
-      }}
+      className="flex min-h-screen font-sans bg-gray-50"
+
     >
       <Sidebar />
 
@@ -426,9 +424,8 @@ const TimesheetForm = () => {
             </button>
 
             <div
-              className={`transition-all duration-300 overflow-hidden ${
-                showCalendar ? "max-h-[400px] mt-4" : "max-h-0"
-              }`}
+              className={`transition-all duration-300 overflow-hidden ${showCalendar ? "max-h-[400px] mt-4" : "max-h-0"
+                }`}
             >
               <div className="mx-auto inline-block border border-gray-300 rounded shadow-md p-4">
                 <Calendar
@@ -642,26 +639,24 @@ const TimesheetForm = () => {
               <button
                 type="button"
                 onClick={(e) => handleSaveSubmit(e, "save")}
-                className={`py-2 px-6 rounded cursor-pointer font-semibold focus:outline-none transition ${
-                  isDisabled
-                    ? "bg-indigo-300 text-gray-200 cursor-not-allowed"
-                    : "bg-indigo-900 text-white hover:bg-indigo-800"
-                }`}
+                className={`py-2 px-6 rounded cursor-pointer font-semibold focus:outline-none transition ${isDisabled
+                  ? "bg-indigo-300 text-gray-200 cursor-not-allowed"
+                  : "bg-indigo-900 text-white hover:bg-indigo-800"
+                  }`}
                 disabled={isDisabled}
               >
-                SAVE
+                Save
               </button>
 
               <button
                 type="submit"
-                className={`py-2 px-6 rounded cursor-pointer font-semibold flex items-center inline-flex justify-center focus:outline-none transition ${
-                  isDisabled
-                    ? "bg-pink-300 text-gray-200 cursor-not-allowed"
-                    : "bg-pink-500 text-white hover:bg-pink-600"
-                }`}
+                className={`py-2 px-6 rounded cursor-pointer font-semibold flex items-center inline-flex justify-center focus:outline-none transition ${isDisabled
+                  ? "bg-pink-300 text-gray-200 cursor-not-allowed"
+                  : "bg-pink-500 text-white hover:bg-pink-600"
+                  }`}
                 disabled={isDisabled}
               >
-                SUBMIT
+                Submit
                 <svg
                   className="w-4 h-4 ml-2"
                   fill="none"

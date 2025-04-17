@@ -1,18 +1,6 @@
-// const express = require('express');
-// const router = express.Router();
-// const { verifyToken } = require('../utils/auth');
-
-// router.get('/protected-data', verifyToken, (req, res) => {
-//   res.json({ message: `Hello, ${req.user.email}. You have access!`, role: req.user.role });
-// });
-
-// module.exports = router;
-
-
 const express = require('express');
 const router = express.Router();
-const { supabase } = require('../config/db'); 
-const authenticateToken = require('../middleware/authMiddleware');
+const { supabase } = require('../config/db');
 
 router.get('/projects/:employee_id', async (req, res) => {
   const { employee_id } = req.params;
@@ -40,34 +28,75 @@ router.get('/projects/:employee_id', async (req, res) => {
   }
 });
 
+router.get("/entries", async (req, res) => {
+  const { employee_id, week_start_date } = req.query;
 
-// Fetch tasks based on project_id
-// GET /api/tasks/:projectId
-router.get('/tasks/:project_id', async (req, res) => {
-    const { project_id } = req.params;
-  
-    try {
-      const { data, error } = await supabase
-        .from('project_tasks')
-        .select('task_id, tasks(task_name)')
-        .eq('project_id', project_id);
-  
-      if (error) {
-        console.error(' Supabase error:', error.message);
-        return res.status(500).json({ error: 'Internal server error' });
-      }
-  
-      const tasks = data.map(entry => ({
-        task_id: entry.task_id,
-        task_name: entry.tasks.task_name
-      }));
-  
-      res.status(200).json(tasks);
-    } catch (err) {
-      console.error(' Unexpected error:', err.message);
-      res.status(500).json({ error: 'Internal server error' });
+  if (!employee_id || !week_start_date) {
+    return res.status(400).json({ error: "Missing employee_id or week_start_date" });
+  }
+
+  try {
+    // Step 1: Find the timesheet
+    const { data: timesheet, error: tsError } = await supabase
+      .from("timesheets")
+      .select("timesheet_id")
+      .eq("employee_id", employee_id)
+      .eq("week_start_date", week_start_date);
+
+    if (tsError) {
+      console.error("Error fetching timesheet:", tsError.message);
+      return res.status(500).json({ error: "Error fetching timesheet" });
     }
-  });
+
+    if (!timesheet || timesheet.length === 0) {
+      return res.status(200).json([]);
+    }
+
+    const timesheet_id = timesheet[0]?.timesheet_id;
+    console.log("Timesheet ID:", timesheet);
+    // Step 2: Fetch entries by timesheet_id
+    const { data: entries, error: entryError } = await supabase
+      .from("entries")
+      .select("*")
+      .eq("timesheet_id", timesheet_id);
+
+    if (entryError) {
+      console.error("Error fetching entries:", entryError.message);
+      return res.status(500).json({ error: "Error fetching entries" });
+    }
+
+    return res.status(200).json(entries);
+  } catch (err) {
+    console.error("Unexpected error:", err.message);
+    return res.status(500).json({ error: "Unexpected server error" });
+  }
+});
+
+router.get('/tasks/:project_id', async (req, res) => {
+  const { project_id } = req.params;
+
+  try {
+    const { data, error } = await supabase
+      .from('project_tasks')
+      .select('task_id, tasks(task_name)')
+      .eq('project_id', project_id);
+
+    if (error) {
+      console.error(' Supabase error:', error.message);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+
+    const tasks = data.map(entry => ({
+      task_id: entry.task_id,
+      task_name: entry.tasks.task_name
+    }));
+
+    res.status(200).json(tasks);
+  } catch (err) {
+    console.error(' Unexpected error:', err.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 
 
 router.post('/timesheets', async (req, res) => {
@@ -75,12 +104,13 @@ router.post('/timesheets', async (req, res) => {
     employee_id,
     week_start_date,
     week_end_date,
-    status, // "Saved" or "Submitted"
+    status, 
     entries
   } = req.body;
 
   try {
     // 1. Calculate total hours
+    console.log(entries)
     const total_hours = entries.reduce((total, entry) => {
       return total + (entry.mon_hours || 0) + (entry.tue_hours || 0) +
         (entry.wed_hours || 0) + (entry.thu_hours || 0) +
@@ -204,7 +234,6 @@ router.post('/timesheets', async (req, res) => {
 
     // 6. If status is "Submitted", insert into project_manager table
     if (status === "Submitted") {
-      // Fetch all project_ids from project_team table
       const { data: projectTeams, error: teamFetchError } = await supabase
         .from('project_team')
         .select('project_id')
@@ -214,7 +243,6 @@ router.post('/timesheets', async (req, res) => {
 
       const project_ids = projectTeams.map(pt => pt.project_id);
 
-      // Fetch all project_manager_ids for those projects
       const { data: projectManagers, error: projectFetchError } = await supabase
         .from('projects')
         .select('project_manager_id,project_id')
@@ -222,7 +250,7 @@ router.post('/timesheets', async (req, res) => {
 
       if (projectFetchError) throw projectFetchError;
 
-      // Insert into project_manager table for each manager
+    
       const managerInserts = projectManagers.map(pm => ({
         timesheet_id,
         manager_id: pm.project_manager_id,
@@ -253,128 +281,85 @@ router.post('/timesheets', async (req, res) => {
 
 // DELETE /timesheet/entries
 router.delete('/entries', async (req, res) => {
-    try {
-      const { employee_id, project_id, task_id, week_start_date } = req.query;
-  
-      console.log("🧾 DELETE /entries query params:", req.query);
-  
-      // Validate input
-      if (!employee_id || !project_id || !task_id || !week_start_date) {
-        return res.status(400).json({ message: 'Missing one or more required query parameters' });
-      }
-  
-      // 1. Fetch the timesheet_id based on employee_id and week_start_date from the timesheet table
-      const { data: timesheets, error: timesheetError } = await supabase
-        .from('timesheets')
-        .select('timesheet_id')
-        .eq('employee_id', employee_id)  // Query by employee_id
-        .eq('week_start_date', week_start_date)  // Query by week_start_date
-        .single();  // Assuming there is only one matching record
-  
-      if (timesheetError || !timesheets) {
-        console.error("❌ Error fetching timesheet:", timesheetError);
-        return res.status(404).json({ message: 'Timesheet not found' });
-      }
-  
-      const timesheetId = timesheets.timesheet_id; // Get timesheet_id
-  
-      // 2. Delete the entry from the entries table using timesheet_id
-      const { data, error } = await supabase
-        .from('entries')
-        .delete()
-        .eq('timesheet_id', timesheetId)  // Using the timesheet_id from the previous step
-        .eq('project_id', project_id)
-        .eq('task_id', task_id)
-        .eq('week_start_date', week_start_date);
-  
-      if (error) {
-        console.error("❌ Supabase delete error:", error);
-        return res.status(500).json({ message: 'Failed to delete entry', error });
-      }
-  
-      console.log("✅ Entry deleted:", data);
-      res.status(200).json({ message: 'Entry deleted successfully' });
-  
-    } catch (err) {
-      console.error("🔥 Unexpected error in DELETE /entries:", err);
-      res.status(500).json({ message: 'Server error', error: err.message });
-    }
-  });
-  
+  try {
+    const { employee_id, project_id, task_id, week_start_date } = req.query;
 
-  router.get("/entries", async (req, res) => {
-    const { employee_id, week_start_date } = req.query;
-  
-    if (!employee_id || !week_start_date) {
-      return res.status(400).json({ error: "Missing employee_id or week_start_date" });
-    }
-  
-    try {
-      // Step 1: Find the timesheet
-      const { data: timesheet, error: tsError } = await supabase
-        .from("timesheets")
-        .select("timesheet_id")
-        .eq("employee_id", employee_id)
-        .eq("week_start_date", week_start_date);
-  
-      if (tsError) {
-        console.error("Error fetching timesheet:", tsError.message);
-        return res.status(500).json({ error: "Error fetching timesheet" });
-      }
-  
-      if (!timesheet || timesheet.length === 0) {
-        return res.status(200).json([]);
-      }
-  
-      const timesheet_id = timesheet[0]?.timesheet_id;
-      console.log("Timesheet ID:", timesheet);
-      // Step 2: Fetch entries by timesheet_id
-      const { data: entries, error: entryError } = await supabase
-        .from("entries")
-        .select("*")
-        .eq("timesheet_id", timesheet_id);
-  
-      if (entryError) {
-        console.error("Error fetching entries:", entryError.message);
-        return res.status(500).json({ error: "Error fetching entries" });
-      }
-  
-      return res.status(200).json(entries);
-    } catch (err) {
-      console.error("Unexpected error:", err.message);
-      return res.status(500).json({ error: "Unexpected server error" });
-    }
-  });
+    console.log(" DELETE /entries query params:", req.query);
 
-  router.get('/timesheets', async (req, res) => {
-    const { employee_id, week_start_date } = req.query;
-  
-    if (!employee_id || !week_start_date) {
-      return res.status(400).json({ error: 'Missing employee_id or week_start_date' });
+    if (!employee_id || !project_id || !task_id || !week_start_date) {
+      return res.status(400).json({ message: 'Missing one or more required query parameters' });
     }
-  
-    try {
-      const { data, error } = await supabase
-        .from('timesheets')
-        .select('timesheet_id, status')
-        .eq('employee_id', employee_id)
-        .eq('week_start_date', week_start_date)
-        .single();
-  
-      if (error && error.code !== 'PGRST116') { // PGRST116 = "Row not found"
-        console.error('Error fetching timesheet:', error);
-        return res.status(500).json({ error: 'Failed to fetch timesheet' });
-      }
-  
-      if (!data) {
-        return res.status(200).json({ status: null }); // No timesheet yet for this week
-      }
-  
-      return res.status(200).json({ id: data.id, status: data.status });
-  
-    } catch (err) {
-      console.error('Server error:', err);
-      res.status(500).json({ error: 'Server error' });
+
+    // 1. Fetch the timesheet_id based on employee_id and week_start_date from the timesheet table
+    const { data: timesheets, error: timesheetError } = await supabase
+      .from('timesheets')
+      .select('timesheet_id')
+      .eq('employee_id', employee_id)
+      .eq('week_start_date', week_start_date)
+      .single();
+
+    if (timesheetError || !timesheets) {
+      console.error(" Error fetching timesheet:", timesheetError);
+      return res.status(404).json({ message: 'Timesheet not found' });
     }
-  });
+
+    const timesheetId = timesheets.timesheet_id;
+
+    // 2. Delete the entry from the entries table using timesheet_id
+    const { data, error } = await supabase
+      .from('entries')
+      .delete()
+      .eq('timesheet_id', timesheetId)
+      .eq('project_id', project_id)
+      .eq('task_id', task_id)
+      .eq('week_start_date', week_start_date);
+
+    if (error) {
+      console.error(" Supabase delete error:", error);
+      return res.status(500).json({ message: 'Failed to delete entry', error });
+    }
+
+    console.log(" Entry deleted:", data);
+    res.status(200).json({ message: 'Entry deleted successfully' });
+
+  } catch (err) {
+    console.error(" Unexpected error in DELETE /entries:", err);
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+
+
+
+router.get('/timesheets', async (req, res) => {
+  const { employee_id, week_start_date } = req.query;
+
+  if (!employee_id || !week_start_date) {
+    return res.status(400).json({ error: 'Missing employee_id or week_start_date' });
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('timesheets')
+      .select('timesheet_id, status')
+      .eq('employee_id', employee_id)
+      .eq('week_start_date', week_start_date)
+      .single();
+
+    if (error && error.code !== 'PGRST116') { // PGRST116 = "Row not found"
+      console.error('Error fetching timesheet:', error);
+      return res.status(500).json({ error: 'Failed to fetch timesheet' });
+    }
+
+    if (!data) {
+      return res.status(200).json({ status: null }); 
+    }
+
+    return res.status(200).json({ id: data.id, status: data.status });
+
+  } catch (err) {
+    console.error('Server error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
 module.exports = router;

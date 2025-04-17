@@ -47,6 +47,8 @@ const TimesheetApproval = () => {
   const [openProjectModal, setOpenProjectModal] = useState(false);
   const [projectDetails, setProjectDetails] = useState(null);
   const [existingReviews, setExistingReviews] = useState({});
+  const [disabledButtons, setDisabledButtons] = useState({});
+
   const navigate = useNavigate();
   const user = getUserFromCookie();
   const managerId = user?.id;
@@ -86,6 +88,8 @@ const TimesheetApproval = () => {
     setFoodRating(0);
     setFeedback("");
     setOpenModal(true);
+
+    setDisabledButtons((prev) => ({ ...prev, [timesheet.timesheet_id]: true })); // Disable the button after click
   };
 
   const handleReject = async (timesheet) => {
@@ -154,7 +158,7 @@ const TimesheetApproval = () => {
     }
     setOpenModal(false);
     navigate(`/approval/${managerId}`);
-    window.location.reload(); 
+    // window.location.reload(); 
   };
 
   const handleViewProject = async (timesheetId) => {
@@ -230,9 +234,8 @@ const TimesheetApproval = () => {
                   return (
                     <tr
                       key={uuidv4()}
-                      className={`${
-                        index % 2 === 0 ? "bg-white" : "bg-gray-50"
-                      } hover:bg-gray-100 transition duration-200 cursor-pointer`}
+                      className={`${index % 2 === 0 ? "bg-white" : "bg-gray-50"
+                        } hover:bg-gray-100 transition duration-200 cursor-pointer`}
                     >
                       <td className="px-6 py-4 text-sm text-gray-800">
                         {ts.employees.name}
@@ -254,7 +257,7 @@ const TimesheetApproval = () => {
                           variant="contained"
                           color="primary"
                           onClick={() => handleApprove(ts)}
-                          disabled={isReviewed}
+                          disabled={isReviewed || disabledButtons[ts.timesheet_id]}
                           style={{ marginRight: "10px" }}
                         >
                           Approve
@@ -263,7 +266,7 @@ const TimesheetApproval = () => {
                           variant="contained"
                           color="secondary"
                           onClick={() => handleReject(ts)}
-                          disabled={isReviewed}
+                          disabled={isReviewed || disabledButtons[ts.timesheet_id]}
                           style={{ marginRight: "10px" }}
                         >
                           Reject
@@ -291,8 +294,8 @@ const TimesheetApproval = () => {
                 top: "50%",
                 left: "50%",
                 transform: "translate(-50%, -50%)",
-                width: "80%",
-                maxWidth: 800,
+                width: "50%",
+                maxWidth: 500,
                 maxHeight: "80vh",
                 overflow: "auto",
                 bgcolor: "background.paper",
@@ -422,9 +425,8 @@ const TimesheetApproval = () => {
                         {projectDetails.map((entry, index) => (
                           <tr
                             key={entry.entry_id}
-                            className={`${
-                              index % 2 === 0 ? "bg-white" : "bg-gray-50"
-                            } hover:bg-gray-100 transition duration-200 cursor-pointer`}
+                            className={`${index % 2 === 0 ? "bg-white" : "bg-gray-50"
+                              } hover:bg-gray-100 transition duration-200 cursor-pointer`}
                           >
                             <td className="px-6 py-4 text-sm text-gray-800">
                               {entry.projects?.project_name || "N/A"}

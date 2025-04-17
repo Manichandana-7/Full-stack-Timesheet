@@ -5,7 +5,7 @@ import { FiLogOut, FiEdit, FiSave, FiCheckCircle } from 'react-icons/fi';
 import { jwtDecode } from 'jwt-decode';
 
 const getUserFromCookie = () => {
-  console.log('cookie',document.cookie);
+  console.log('cookie', document.cookie);
   const cookie = document.cookie
     .split('; ')
     .find(row => row.startsWith('token='));
@@ -36,9 +36,9 @@ const Sidebar = () => {
   };
 
   return (
-   <aside
-  className="fixed left-0 top-0 h-screen w-64 p-6 text-white flex flex-col justify-between overflow-y-auto bg-gradient-to-b from-violet-950 via-purple-900 via-pink-900 to-pink-800"
->
+    <aside
+      className="fixed left-0 top-0 h-screen w-64 p-6 text-white flex flex-col justify-between overflow-y-auto bg-gradient-to-b from-violet-950 via-purple-900 via-pink-900 to-pink-800"
+    >
       <div>
         <h2
           style={{
@@ -61,11 +61,11 @@ const Sidebar = () => {
 
         <nav style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
           <span onClick={() => navigate('/timesheet')} className="cursor-pointer flex  items-center gap-2 text-white font-medium text-[16px] mt-2 px-4 py-2 rounded-md hover:bg-white hover:text-purple-900 transition duration-200">
-          <FiEdit size={18} />
+            <FiEdit size={18} />
             Create Timesheet
           </span>
           <span onClick={() => navigate('/dashboard')} className="cursor-pointer flex  items-center gap-2 text-white font-medium text-[16px] mt-2 px-4 py-2 rounded-md hover:bg-white hover:text-purple-900 transition duration-200">
-          <FiSave size={18} />
+            <FiSave size={18} />
             Saved Timesheet
           </span>
 
