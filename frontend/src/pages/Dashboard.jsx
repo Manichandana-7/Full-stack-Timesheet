@@ -5,18 +5,17 @@ import SavedTimesheet from './SavedTimesheet';
 
 const Dashboard = () => {
   return (
-    <div
-      style={{
-        display: 'flex',
-        minHeight: '100vh',
-        fontFamily: 'Segoe UI, sans-serif',
-        backgroundColor: '#f9fafb',
-      }}
-    >
-      <Sidebar />
+    <div className="flex flex-col md:flex-row min-h-screen font-sans bg-gray-50">
+      {/* Sidebar - top on mobile, left on larger screens */}
+      <div className="w-full md:w-64 bg-white shadow md:shadow-none">
+        <Sidebar />
+      </div>
 
-      <main style={{ flex: 1, padding: '40px' }} className="ml-64">
-        <SavedTimesheet />
+      {/* Main Content Area */}
+      <main className="flex-1 p-4 sm:p-6 md:p-10 overflow-y-auto">
+        <div className="max-w-full mx-auto">
+          <SavedTimesheet />
+        </div>
       </main>
     </div>
   );
