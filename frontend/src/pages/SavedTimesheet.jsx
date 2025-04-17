@@ -23,8 +23,7 @@ const getUserFromCookie = () => {
 };
 const SavedTimesheet = () => {
   const [timesheets, setTimesheets] = useState([]);
-  // const [loading, setLoading] = useState(true);
-  // const [error, setError] = useState(null);
+
   const [selectedManagers, setSelectedManagers] = useState({});
 
 
@@ -58,10 +57,9 @@ const SavedTimesheet = () => {
         });
 
         setTimesheets(timesheetsWithReviews);
-        setLoading(false);
+
       } catch (err) {
         setError("Failed to fetch timesheets");
-        setLoading(false);
       }
     };
 
@@ -75,9 +73,6 @@ const SavedTimesheet = () => {
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
 
-  // if (loading) return <div className="text-center text-xl">Loading...</div>;
-  // if (error)
-  //   return <div className="text-center text-xl text-red-600">{error}</div>;
 
   return (
     <div className="container mx-auto p-6">

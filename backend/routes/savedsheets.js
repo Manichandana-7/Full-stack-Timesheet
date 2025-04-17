@@ -61,7 +61,6 @@ router.get('/timesheets', async (req, res) => {
       return res.status(400).json({ message: 'Employee ID is required' });
     }
 
-    // Fetch timesheets from the database based on employee_id
     const { data, error } = await supabase
       .from('timesheets')
       .select('timesheet_id, week_start_date, week_end_date, total_hours, status')
@@ -76,21 +75,6 @@ router.get('/timesheets', async (req, res) => {
   } catch (err) {
     console.error('Unexpected error:', err);
     return res.status(500).json({ message: 'Server error', error: err.message });
-  }
-});
-
-router.get('/timesheets/:timesheetId', async (req, res) => {
-  try {
-    const { data, error } = await supabase
-      .from('timesheets')
-      .select('*')
-      .eq('timesheet_id', req.params.timesheetId)
-      .single();
-
-    if (error) throw error;
-    res.json({ timesheet: data });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
   }
 });
 
@@ -109,35 +93,5 @@ router.get('/entries', async (req, res) => {
   }
 });
 
-router.patch('/timesheets/:timesheetId', async (req, res) => {
-  try {
-    const { status, total_hours } = req.body;
-    const { data, error } = await supabase
-      .from('timesheets')
-      .update({ status, total_hours })
-      .eq('timesheet_id', req.params.timesheetId)
-      .select();
-
-    if (error) throw error;
-    res.json(data);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-router.put('/entries/:entryId', async (req, res) => {
-  try {
-    const { data, error } = await supabase
-      .from('entries')
-      .update(req.body)
-      .eq('entry_id', req.params.entryId)
-      .select();
-
-    if (error) throw error;
-    res.json(data);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
 
 module.exports = router;

@@ -36,11 +36,11 @@ const getUserFromCookie = () => {
 };
 const TimesheetApproval = () => {
   const [timesheets, setTimesheets] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  // const [loading, setLoading] = useState(true);
+  // const [error, setError] = useState(null);
   const [selectedTimesheet, setSelectedTimesheet] = useState(null);
-  const [foodRating, setFoodRating] = useState(0);
-  const [foodHover, setFoodHover] = useState(-1);
+  const [pmRating, setpmRating] = useState(0);
+  const [pmHover, setpmHover] = useState(-1);
   const [feedback, setFeedback] = useState("");
   const [openModal, setOpenModal] = useState(false);
   const [submittedReviews, setSubmittedReviews] = useState(new Set());
@@ -57,7 +57,6 @@ const TimesheetApproval = () => {
     try {
       const timesheetResponse = await api.get(`/approval/${managerId}`);
 
-      // Ensure the response is an array of timesheets
       if (Array.isArray(timesheetResponse.data)) {
         setTimesheets(timesheetResponse.data);
       } else {
@@ -85,15 +84,14 @@ const TimesheetApproval = () => {
 
   const handleApprove = (timesheet) => {
     setSelectedTimesheet(timesheet);
-    setFoodRating(0);
+    setpmRating(0);
     setFeedback("");
     setOpenModal(true);
-
-    setDisabledButtons((prev) => ({ ...prev, [timesheet.timesheet_id]: true })); // Disable the button after click
+    setDisabledButtons((prev) => ({ ...prev, [timesheet.timesheet_id]: true }));
   };
 
   const handleReject = async (timesheet) => {
-    const reviewKey = `${timesheet.timesheet_id}_${managerId}`; // Adjusted to access timesheet_id directly
+    const reviewKey = `${timesheet.timesheet_id}_${managerId}`;
     if (existingReviews[reviewKey]) {
       alert("Review already submitted for this timesheet.");
       return;
@@ -101,7 +99,7 @@ const TimesheetApproval = () => {
 
     try {
       const response = await api.post("/approval/performance-reviews", {
-        timesheet_id: timesheet.timesheet_id, // Adjusted to access timesheet_id directly
+        timesheet_id: timesheet.timesheet_id, 
         project_manager_id: managerId,
         rating: null,
         feedback: "Rejected",
@@ -115,18 +113,18 @@ const TimesheetApproval = () => {
           [reviewKey]: true,
         }));
         setSubmittedReviews(
-          (prev) => new Set(prev).add(timesheet.timesheet_id) // Adjusted to access timesheet_id directly
+          (prev) => new Set(prev).add(timesheet.timesheet_id) 
         );
       }
     } catch (err) {
       console.error("Error rejecting timesheet:", err);
     }
     navigate(`/approval/${managerId}`);
-    window.location.reload();
+    setDisabledButtons((prev) => ({ ...prev, [timesheet.timesheet_id]: true }));
   };
 
   const handleSubmitReview = async () => {
-    if (foodRating < 3 && !feedback) {
+    if (pmRating < 3 && !feedback) {
       alert("Please provide feedback for ratings below 3.");
       return;
     }
@@ -141,15 +139,13 @@ const TimesheetApproval = () => {
       const response = await api.post("/approval/performance-reviews", {
         timesheet_id: selectedTimesheet.timesheet_id,
         project_manager_id: managerId,
-        rating: foodRating,
-        feedback: foodRating < 3 ? feedback : null,
+        rating: pmRating,
+        feedback: pmRating < 3 ? feedback : null,
         status: "Approved",
       });
 
       if (response.status === 200) {
         alert("Performance review submitted successfully.");
-
-        // Fetch updated timesheet + reviews again
         await fetchData();
         handleCloseModal();
       }
@@ -158,7 +154,6 @@ const TimesheetApproval = () => {
     }
     setOpenModal(false);
     navigate(`/approval/${managerId}`);
-    // window.location.reload(); 
   };
 
   const handleViewProject = async (timesheetId) => {
@@ -173,8 +168,8 @@ const TimesheetApproval = () => {
 
   const handleCloseModal = () => {
     setOpenModal(false);
-    setFoodRating(0);
-    setFoodHover(-1);
+    setpmRating(0);
+    setpmHover(-1);
     setFeedback("");
   };
 
@@ -274,7 +269,7 @@ const TimesheetApproval = () => {
                         <Button
                           variant="outlined"
                           color="primary"
-                          onClick={() => handleViewProject(ts.timesheet_id)} // Adjusted to access timesheet_id directly
+                          onClick={() => handleViewProject(ts.timesheet_id)} 
                         >
                           View
                         </Button>
@@ -325,22 +320,22 @@ const TimesheetApproval = () => {
               >
                 <Rating
                   name="food-rating"
-                  value={foodRating}
+                  value={pmRating}
                   precision={1}
                   size="large"
-                  onChange={(event, newValue) => setFoodRating(newValue)}
-                  onChangeActive={(event, newHover) => setFoodHover(newHover)}
+                  onChange={(event, newValue) => setpmRating(newValue)}
+                  onChangeActive={(event, newHover) => setpmHover(newHover)}
                   emptyIcon={
                     <CiStar style={{ opacity: 0.55 }} fontSize="inherit" />
                   }
                 />
-                {foodRating !== null && (
+                {pmRating !== null && (
                   <Box sx={{ ml: 2 }}>
-                    {labels[foodHover !== -1 ? foodHover : foodRating]}
+                    {labels[pmHover !== -1 ? pmHover : pmRating]}
                   </Box>
                 )}
               </Box>
-              {foodRating < 3 && (
+              {pmRating < 3 && (
                 <div>
                   <label>
                     Feedback:
